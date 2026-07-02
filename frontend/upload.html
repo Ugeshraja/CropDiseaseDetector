@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropGuard AI - Diagnostics Panel</title>
+    <link rel="stylesheet" href="upload.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="bg-glow-secondary"></div>
+
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+        <div class="nav-left">
+            <a href="index.html" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h2>Agricultural Diagnostics</h2>
+        </div>
+        <div class="nav-right">
+            <span class="badge-version">CropNet CNN v1.2</span>
+        </div>
+    </header>
+
+    <!-- DASHBOARD CONTAINER -->
+    <main class="dashboard">
+        
+        <!-- LEFT COLUMN: INPUT / UPLOAD -->
+        <section class="panel upload-panel">
+            <div class="panel-header">
+                <h3><i class="fa-solid fa-camera-retro panel-icon"></i> Analyze Leaf</h3>
+                <p>Upload a clear crop leaf photo (Tomato, Potato, or Pepper Bell)</p>
+            </div>
+
+            <!-- DRAG & DROP ZONE -->
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content" id="dropZoneContent">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                    <p class="drop-zone-text">Drag & drop your leaf image here</p>
+                    <span class="drop-zone-or">or</span>
+                    <button type="button" class="btn btn-browse" onclick="document.getElementById('fileInput').click()">
+                        Browse Files
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+                
+                <!-- PREVIEW CONTAINER -->
+                <div class="preview-container" id="previewContainer" style="display:none">
+                    <img id="previewImage" src="" alt="Leaf Preview">
+                    <button class="btn-clear" id="btnClear" title="Clear Image">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTROLS -->
+            <div class="control-actions">
+                <button onclick="showResult()" class="btn btn-detect" id="detectBtn" disabled>
+                    <i class="fa-solid fa-microscope"></i> Detect Disease
+                </button>
+                <button class="btn btn-reset" id="resetBtn" style="display:none">
+                    <i class="fa-solid fa-rotate-right"></i> Reset
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: RESULTS PANEL -->
+        <section class="panel results-panel" id="resultsPanel">
+            
+            <!-- EMPTY STATE -->
+            <div class="empty-state" id="emptyState">
+                <i class="fa-solid fa-chart-simple empty-icon"></i>
+                <h4>Ready for Diagnostics</h4>
+                <p>Upload an image and click "Detect Disease" to run neural network analysis.</p>
+            </div>
+
+            <!-- LOADING STATE -->
+            <div class="loading-state" id="loadingState" style="display:none">
+                <div class="spinner"></div>
+                <h4>Analyzing Leaf Structure...</h4>
+                <p>Checking validity and extracting leaf disease patterns.</p>
+            </div>
+
+            <!-- ERROR STATE -->
+            <div class="error-alert" id="errorAlert" style="display:none">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div class="error-content">
+                    <h5 id="errorTitle">Analysis Error</h5>
+                    <p id="errorMsg">Something went wrong.</p>
+                </div>
+            </div>
+
+            <!-- RESULT CONTENT -->
+            <div class="result-content" id="resultContent" style="display:none">
+                
+                <div class="result-main-header">
+                    <div>
+                        <span class="badge-status" id="badgeStatus">DISEASED</span>
+                        <h3 id="resultTitle">Tomato - Late Blight</h3>
+                    </div>
+                    <div class="time-stat">
+                        <span id="predictionTime">0.24s</span>
+                    </div>
+                </div>
+
+                <!-- CONFIDENCE SCORE PROGRESS BAR -->
+                <div class="confidence-container">
+                    <div class="confidence-header">
+                        <span>Confidence Level</span>
+                        <span class="confidence-value" id="confidenceValue">84.6%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- DESCRIPTION CARD -->
+                <div class="card card-desc">
+                    <h5><i class="fa-solid fa-circle-info"></i> Description</h5>
+                    <p id="descText">Disease description goes here.</p>
+                </div>
+
+                <!-- SYMPTOMS & CAUSES GRID -->
+                <div class="details-grid">
+                    <div class="card card-symptoms">
+                        <h5><i class="fa-solid fa-list-check"></i> Symptoms</h5>
+                        <ul id="symptomsList">
+                            <li>Symptom 1</li>
+                        </ul>
+                    </div>
+                    <div class="card card-causes">
+                        <h5><i class="fa-solid fa-circle-question"></i> Root Causes</h5>
+                        <ul id="causesList">
+                            <li>Cause 1</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- TREATMENT & PREVENTION -->
+                <div class="card card-treatment">
+                    <h5><i class="fa-solid fa-prescription-bottle-medical"></i> Treatment & Control</h5>
+                    <p id="treatmentText">Treatment information.</p>
+                </div>
+
+                <div class="card card-prevention">
+                    <h5><i class="fa-solid fa-shield-halved"></i> Prevention Tips</h5>
+                    <p id="preventionText">Prevention tips.</p>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- PREDICTION HISTORY FOOTER/DRAWER -->
+    <aside class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <h4><i class="fa-solid fa-clock-rotate-left"></i> History Log</h4>
+            <button class="btn-clear-history" id="btnClearHistory">Clear All</button>
+        </div>
+        <div class="history-list" id="historyList">
+            <!-- Dynamic history items -->
+            <p class="no-history-text">No past predictions.</p>
+        </div>
+    </aside>
+
+    <!-- FLOATING HISTORY TOGGLE BUTTON -->
+    <button class="history-toggle-btn" id="historyToggleBtn" title="Toggle History Log">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+    </button>
+
+    <!-- JS script -->
+    <script src="script.js"></script>
+</body>
+</html>
