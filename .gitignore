@@ -25,3 +25,4 @@ __pycache__/
 *.pyc
 uploads/
 .env
+backend/crop_disease.tflite

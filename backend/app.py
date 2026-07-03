@@ -25,29 +25,29 @@ def allowed_file(filename):
 # ====================================
 import requests
 
-MODEL_PATH = "trained_model.keras"
-
-MODEL_URL = "https://huggingface.co/ugeshraja007/crop-disease-model/resolve/main/trained_model.keras"
+MODEL_URL = "https://huggingface.co/ugeshraja007/crop-disease-model/resolve/main/crop_disease.tflite?download=true"
+MODEL_PATH = "crop_disease.tflite"
 
 if not os.path.exists(MODEL_PATH):
-    print("Downloading model from Hugging Face...")
+    print("Downloading TensorFlow Lite model...")
 
     response = requests.get(MODEL_URL, stream=True)
     response.raise_for_status()
 
     with open(MODEL_PATH, "wb") as f:
-        for chunk in response.iter_content(chunk_size=8192):
+        for chunk in response.iter_content(8192):
             if chunk:
                 f.write(chunk)
 
-print("Loading Disease Prediction Model...")
+print("Loading TensorFlow Lite model...")
 
-model = tf.keras.models.load_model(
-    MODEL_PATH,
-    compile=False
-)
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
 
-print("Disease Model Loaded Successfully!")
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+print("TensorFlow Lite model loaded!")
 
 print("Loading Validation Model (MobileNetV2)...")
 validator_model = tf.keras.applications.MobileNetV2(
@@ -450,14 +450,30 @@ def predict():
         img_array = np.expand_dims(img_array, axis=0)
 
         # 3. Model Prediction
-        prediction = model.predict(img_array)
+        interpreter.set_tensor(
+        input_details[0]["index"],
+        img_array.astype(np.float32)
+        )
+
+        interpreter.invoke()
+
+        prediction = interpreter.get_tensor(
+        output_details[0]["index"]
+        )
+
+        # ADD THESE LINES HERE
         index = np.argmax(prediction[0])
-        disease = class_names[index]
         confidence = float(prediction[0][index])
+        disease = class_names[index]
 
         execution_time = time.time() - start_time
-        print(f"Inference complete: {disease} (Confidence: {confidence * 100:.2f}%) in {execution_time:.3f}s")
+        print(
+            f"Inference complete: {disease} "
+            f"(Confidence: {confidence * 100:.2f}%) "
+            f"in {execution_time:.3f}s"
+        )
 
+        
         # 4. Confidence Threshold Check
         if confidence < CONFIDENCE_THRESHOLD:
             print(f"Confidence score {confidence * 100:.2f}% below threshold ({CONFIDENCE_THRESHOLD * 100}%)")
