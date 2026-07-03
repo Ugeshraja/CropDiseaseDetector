@@ -41,6 +41,8 @@ if not os.path.exists(MODEL_PATH):
 
 print("Loading TensorFlow Lite model...")
 
+print("Loading TensorFlow Lite model...")
+
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 
@@ -48,14 +50,6 @@ input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
 print("TensorFlow Lite model loaded!")
-
-print("Loading Validation Model (MobileNetV2)...")
-validator_model = tf.keras.applications.MobileNetV2(
-    weights="imagenet",
-    input_shape=(224, 224, 3)
-)
-print("Validation Model Loaded Successfully!")
-
 # ====================================
 # CONFIGURATION
 # ====================================
@@ -340,67 +334,6 @@ crop_database = {
         "prevention": "Prune suckers to maintain balanced airflow. Apply mulch to stabilize soil moisture. Inspect leaves weekly."
     }
 }
-
-# ====================================
-# HYBRID IMAGE VALIDATION FUNCTION
-# ====================================
-def validate_leaf_image(image):
-    """
-    Validates if the image actually contains a plant leaf using MobileNetV2.
-    Returns (is_valid, error_message_or_none)
-    """
-    img_resized = image.resize((224, 224))
-    img_array = np.array(img_resized)
-    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array.astype(np.float32))
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # Run validation prediction
-    predictions = validator_model.predict(img_array)
-    decoded = tf.keras.applications.mobilenet_v2.decode_predictions(predictions, top=5)[0]
-
-    plant_keywords = {
-        "leaf", "leaves", "plant", "tree", "flower", "vegetable", "fruit", "foliage",
-        "potplant", "potted plant", "greenhouse", "buckeye", "acorn", "fig", "banana",
-        "apple", "grape", "orange", "lemon", "lime", "strawberry", "pineapple",
-        "daisy", "sunflower", "rose", "tulip", "orchid", "cabbage", "broccoli",
-        "cucumber", "zucchini", "bell pepper", "pepper", "potato", "tomato", "corn",
-        "maize", "rapeseed", "mushroom", "fungus", "bolete", "agaric", "clover",
-        "hay", "straw", "log", "woodland", "forest", "grass"
-    }
-
-    blacklist_keywords = {
-        "dog", "cat", "hound", "terrier", "retriever", "spaniel", "collie", "poodle",
-        "puma", "leopard", "lion", "tiger", "cheetah", "bear", "elephant", "zebra",
-        "giraffe", "car", "automobile", "truck", "bus", "motorcycle", "bicycle",
-        "train", "airplane", "aeroplane", "boat", "ship", "computer", "monitor",
-        "screen", "keyboard", "mouse", "laptop", "phone", "television", "tv",
-        "desk", "table", "chair", "sofa", "bed", "house", "building", "skyscraper",
-        "bridge", "person", "man", "woman", "child", "clothing", "shoe", "shirt",
-        "pants", "jacket", "suit", "tie", "dress", "skirt", "sock", "plate", "dish",
-        "fork", "spoon", "knife", "cup", "mug", "bottle", "food", "sandwich", "pizza"
-    }
-
-    # 1. Blacklist check on the top prediction
-    top_label = decoded[0][1].lower().replace("_", " ")
-    top_prob = decoded[0][2]
-    
-    print(f"[Validation] Top predicted ImageNet class: '{top_label}' ({top_prob * 100:.2f}%)")
-
-    for blacklist_word in blacklist_keywords:
-        if blacklist_word in top_label:
-            if top_prob > 0.15:  # 15% threshold for blacklisted items
-                return False, f"This image is recognized as a '{top_label}' ({top_prob * 100:.1f}%), which does not appear to be a plant leaf."
-
-    # 2. Whitelist check on top 5 predictions
-    for _, label, prob in decoded:
-        label_words = label.lower().replace("_", " ").split()
-        for word in label_words:
-            if word in plant_keywords or any(kw in word for kw in plant_keywords):
-                print(f"[Validation] Match found: '{word}' in class '{label}' ({prob * 100:.2f}%)")
-                return True, None
-
-    return False, "This image does not contain a recognized plant leaf structure."
-
 # ====================================
 # API ROUTES
 # ====================================
@@ -434,15 +367,6 @@ def predict():
         # Load image
         image = Image.open(file)
         image = image.convert("RGB")
-
-        # 1. Image Validation using MobileNetV2
-        is_valid, validation_error = validate_leaf_image(image)
-        if not is_valid:
-            print(f"Validation failed: {validation_error}")
-            return jsonify({
-                "valid": False,
-                "error": validation_error
-            }), 200
 
         # 2. Preprocess for Crop Disease Classifier
         img_array = np.array(image.resize((128, 128)))

@@ -215,8 +215,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             console.error("Backend request failed: ", error);
             showErrorUI(
-                "Connection Failed",
-                "Unable to connect to backend diagnostics server. Make sure your Flask backend is running on http://127.0.0.1:5000."
+            "Connection Failed",
+            "Unable to connect to the Crop Disease Detection server."
             );
             detectBtn.disabled = false;
         }
