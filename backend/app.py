@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 import time
 import os
+import gdown
 
 # ====================================
 # FLASK APP SETUP
@@ -22,11 +23,23 @@ def allowed_file(filename):
 # ====================================
 # LOAD MODELS
 # ====================================
+MODEL_PATH = "trained_model.keras"
+
+if not os.path.exists(MODEL_PATH):
+
+    print("Downloading model from Google Drive...")
+
+    url = "https://drive.google.com/uc?id=1pwB2c3PX4ya1OWzQUPeN553Y1oIZHw1r"
+
+    gdown.download(url, MODEL_PATH, quiet=False)
+
 print("Loading Disease Prediction Model...")
+
 model = tf.keras.models.load_model(
-    "trained_model.keras",
+    MODEL_PATH,
     compile=False
 )
+
 print("Disease Model Loaded Successfully!")
 
 print("Loading Validation Model (MobileNetV2)...")
