@@ -10,5 +10,4 @@ h5py==3.12.1
 
 opencv-python-headless==4.10.0.84
 
-gdown==5.2.0
 requests==2.32.4

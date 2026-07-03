@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 import time
 import os
-import gdown
+import requests
 
 # ====================================
 # FLASK APP SETUP
@@ -23,15 +23,22 @@ def allowed_file(filename):
 # ====================================
 # LOAD MODELS
 # ====================================
+import requests
+
 MODEL_PATH = "trained_model.keras"
 
+MODEL_URL = "https://huggingface.co/ugeshraja007/crop-disease-model/resolve/main/trained_model.keras"
+
 if not os.path.exists(MODEL_PATH):
+    print("Downloading model from Hugging Face...")
 
-    print("Downloading model from Google Drive...")
+    response = requests.get(MODEL_URL, stream=True)
+    response.raise_for_status()
 
-    url = "https://drive.google.com/uc?id=1pwB2c3PX4ya1OWzQUPeN553Y1oIZHw1r"
-
-    gdown.download(url, MODEL_PATH, quiet=False)
+    with open(MODEL_PATH, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
 
 print("Loading Disease Prediction Model...")
 
