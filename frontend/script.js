@@ -185,9 +185,9 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("image", selectedFile);
 
         try {
-            const response = await fetch("http://127.0.0.1:5000/predict", {
-                method: "POST",
-                body: formData
+            const response = await fetch("https://crop-disease-detector-backend-njdi.onrender.com/predict", {
+            method: "POST",
+            body: formData
             });
 
             if (!response.ok) {
